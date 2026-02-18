@@ -13,13 +13,15 @@ import { DialogModel } from "./dialog-model"
 import { useKeyboard } from "@opentui/solid"
 import { Clipboard } from "@tui/util/clipboard"
 import { useToast } from "../ui/toast"
+import { DialogOllamaServers } from "./dialog-ollama"
 
 const PROVIDER_PRIORITY: Record<string, number> = {
-  opencode: 0,
-  anthropic: 1,
-  "github-copilot": 2,
-  openai: 3,
-  google: 4,
+  ollama: 0,
+  opencode: 1,
+  anthropic: 2,
+  "github-copilot": 3,
+  openai: 4,
+  google: 5,
 }
 
 export function createDialogProviderOptions() {
@@ -27,19 +29,24 @@ export function createDialogProviderOptions() {
   const dialog = useDialog()
   const sdk = useSDK()
   const options = createMemo(() => {
-    return pipe(
+    const providerOptions = pipe(
       sync.data.provider_next.all,
       sortBy((x) => PROVIDER_PRIORITY[x.id] ?? 99),
       map((provider) => ({
         title: provider.name,
         value: provider.id,
         description: {
+          ollama: "(Local models)",
           opencode: "(Recommended)",
           anthropic: "(Claude Max or API key)",
           openai: "(ChatGPT Plus/Pro or API key)",
         }[provider.id],
         category: provider.id in PROVIDER_PRIORITY ? "Popular" : "Other",
         async onSelect() {
+          if (provider.id.startsWith("ollama")) {
+            dialog.replace(() => <DialogOllamaServers />)
+            return
+          }
           const methods = sync.data.provider_auth[provider.id] ?? [
             {
               type: "api",
@@ -88,6 +95,20 @@ export function createDialogProviderOptions() {
         },
       })),
     )
+
+    if (!providerOptions.some((o) => o.value === "ollama")) {
+      providerOptions.unshift({
+        title: "Ollama",
+        value: "ollama",
+        description: "(Local models)",
+        category: "Popular",
+        async onSelect() {
+          dialog.replace(() => <DialogOllamaServers />)
+        },
+      })
+    }
+
+    return providerOptions
   })
   return options
 }

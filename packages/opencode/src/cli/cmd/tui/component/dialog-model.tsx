@@ -5,6 +5,7 @@ import { map, pipe, flatMap, entries, filter, sortBy, take } from "remeda"
 import { DialogSelect } from "@tui/ui/dialog-select"
 import { useDialog } from "@tui/ui/dialog"
 import { createDialogProviderOptions, DialogProvider } from "./dialog-provider"
+import { DialogOllamaServers } from "./dialog-ollama"
 import { useKeybind } from "../context/keybind"
 import * as fuzzysort from "fuzzysort"
 
@@ -152,6 +153,13 @@ export function DialogModel(props: { providerID?: string }) {
           disabled: !connected(),
           onTrigger: (option) => {
             local.model.toggleFavorite(option.value as { providerID: string; modelID: string })
+          },
+        },
+        {
+          keybind: { name: "o", ctrl: true, meta: false, shift: false, leader: false },
+          title: "Ollama servers",
+          onTrigger() {
+            dialog.replace(() => <DialogOllamaServers />)
           },
         },
       ]}

@@ -161,5 +161,68 @@ export const ProviderRoutes = lazy(() =>
         })
         return c.json(true)
       },
+    )
+    .get(
+      "/ollama/discover",
+      describeRoute({
+        summary: "Discover Ollama models",
+        description: "Fetch available models from an Ollama server by querying its /api/tags endpoint.",
+        operationId: "provider.ollama.discover",
+        responses: {
+          200: {
+            description: "List of models from the Ollama server",
+            content: {
+              "application/json": {
+                schema: resolver(
+                  z.object({
+                    models: z.array(
+                      z.object({
+                        name: z.string(),
+                        size: z.number(),
+                        parameter_size: z.string().optional(),
+                        quantization_level: z.string().optional(),
+                      }),
+                    ),
+                  }),
+                ),
+              },
+            },
+          },
+          ...errors(400),
+        },
+      }),
+      validator(
+        "query",
+        z.object({
+          url: z.string().meta({ description: "Ollama server base URL (e.g. http://localhost:11434)" }),
+        }),
+      ),
+      async (c) => {
+        const { url } = c.req.valid("query")
+        const base = url.replace(/\/+$/, "")
+        const response = await fetch(`${base}/api/tags`, {
+          signal: AbortSignal.timeout(10_000),
+        }).catch((err) => {
+          throw new Error(`Failed to connect to Ollama server at ${base}: ${err.message}`)
+        })
+        if (!response.ok) {
+          throw new Error(`Ollama server returned ${response.status}: ${await response.text()}`)
+        }
+        const data = (await response.json()) as {
+          models: Array<{
+            name: string
+            size: number
+            details?: { parameter_size?: string; quantization_level?: string }
+          }>
+        }
+        return c.json({
+          models: (data.models ?? []).map((m) => ({
+            name: m.name,
+            size: m.size,
+            parameter_size: m.details?.parameter_size,
+            quantization_level: m.details?.quantization_level,
+          })),
+        })
+      },
     ),
 )
