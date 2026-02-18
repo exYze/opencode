@@ -1,13 +1,44 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
-    "opencode": {
-      "options": {},
-    },
+    // Local Ollama instance — adjust baseURL if running on a remote server
+    "ollama": {
+      "name": "Ollama",
+      "api": "http://localhost:11434/v1",
+      "npm": "@ai-sdk/openai-compatible",
+      "env": [],
+      "models": {
+        // Add your pulled Ollama models here. Example entries:
+        // "llama3.1:8b": {
+        //   "name": "Llama 3.1 8B",
+        //   "tool_call": true,
+        //   "temperature": true,
+        //   "reasoning": false,
+        //   "attachment": false,
+        //   "options": {},
+        //   "limit": { "context": 131072, "output": 4096 },
+        //   "release_date": "2024-07-23"
+        // },
+        // "qwen2.5-coder:7b": {
+        //   "name": "Qwen 2.5 Coder 7B",
+        //   "tool_call": true,
+        //   "temperature": true,
+        //   "reasoning": false,
+        //   "attachment": false,
+        //   "options": {},
+        //   "limit": { "context": 32768, "output": 4096 },
+        //   "release_date": "2024-11-01"
+        // }
+      },
+      "options": {
+        // No API key needed for local Ollama
+        "apiKey": "ollama"
+      }
+    }
   },
   "mcp": {},
   "tools": {
     "github-triage": false,
-    "github-pr-search": false,
-  },
+    "github-pr-search": false
+  }
 }

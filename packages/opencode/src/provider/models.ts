@@ -1,18 +1,7 @@
-import { Global } from "../global"
-import { Log } from "../util/log"
-import path from "path"
 import z from "zod"
-import { Installation } from "../installation"
-import { Flag } from "../flag/flag"
 import { lazy } from "@/util/lazy"
 
-// Try to import bundled snapshot (generated at build time)
-// Falls back to undefined in dev mode when snapshot doesn't exist
-/* @ts-ignore */
-
 export namespace ModelsDev {
-  const log = Log.create({ service: "models.dev" })
-  const filepath = path.join(Global.Path.cache, "models.json")
 
   export const Model = z.object({
     id: z.string(),
@@ -80,22 +69,10 @@ export namespace ModelsDev {
 
   export type Provider = z.infer<typeof Provider>
 
-  function url() {
-    return Flag.OPENCODE_MODELS_URL || "https://models.dev"
-  }
-
   export const Data = lazy(async () => {
-    const file = Bun.file(Flag.OPENCODE_MODELS_PATH ?? filepath)
-    const result = await file.json().catch(() => {})
-    if (result) return result
-    // @ts-ignore
-    const snapshot = await import("./models-snapshot")
-      .then((m) => m.snapshot as Record<string, unknown>)
-      .catch(() => undefined)
-    if (snapshot) return snapshot
-    if (Flag.OPENCODE_DISABLE_MODELS_FETCH) return {}
-    const json = await fetch(`${url()}/api.json`).then((x) => x.text())
-    return JSON.parse(json)
+    // Cloud provider auto-discovery disabled — only local Ollama instances are supported.
+    // Providers are configured manually via opencode.jsonc.
+    return {} as Record<string, unknown>
   })
 
   export async function get() {
@@ -104,30 +81,6 @@ export namespace ModelsDev {
   }
 
   export async function refresh() {
-    const file = Bun.file(filepath)
-    const result = await fetch(`${url()}/api.json`, {
-      headers: {
-        "User-Agent": Installation.USER_AGENT,
-      },
-      signal: AbortSignal.timeout(10 * 1000),
-    }).catch((e) => {
-      log.error("Failed to fetch models.dev", {
-        error: e,
-      })
-    })
-    if (result && result.ok) {
-      await Bun.write(file, await result.text())
-      ModelsDev.Data.reset()
-    }
+    // No-op: cloud provider fetching disabled for Ollama-only mode
   }
-}
-
-if (!Flag.OPENCODE_DISABLE_MODELS_FETCH && !process.argv.includes("--get-yargs-completions")) {
-  ModelsDev.refresh()
-  setInterval(
-    async () => {
-      await ModelsDev.refresh()
-    },
-    60 * 1000 * 60,
-  ).unref()
 }

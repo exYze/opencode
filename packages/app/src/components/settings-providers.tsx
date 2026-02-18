@@ -10,21 +10,12 @@ import { useLanguage } from "@/context/language"
 import { useGlobalSDK } from "@/context/global-sdk"
 import { useGlobalSync } from "@/context/global-sync"
 import { DialogConnectProvider } from "./dialog-connect-provider"
-import { DialogSelectProvider } from "./dialog-select-provider"
 import { DialogCustomProvider } from "./dialog-custom-provider"
 
 type ProviderSource = "env" | "api" | "config" | "custom"
 type ProviderItem = ReturnType<ReturnType<typeof useProviders>["connected"]>[number]
 
-const PROVIDER_NOTES = [
-  { match: (id: string) => id === "opencode", key: "dialog.provider.opencode.note" },
-  { match: (id: string) => id === "anthropic", key: "dialog.provider.anthropic.note" },
-  { match: (id: string) => id.startsWith("github-copilot"), key: "dialog.provider.copilot.note" },
-  { match: (id: string) => id === "openai", key: "dialog.provider.openai.note" },
-  { match: (id: string) => id === "google", key: "dialog.provider.google.note" },
-  { match: (id: string) => id === "openrouter", key: "dialog.provider.openrouter.note" },
-  { match: (id: string) => id === "vercel", key: "dialog.provider.vercel.note" },
-] as const
+const PROVIDER_NOTES = [] as const
 
 export const SettingsProviders: Component = () => {
   const dialog = useDialog()
@@ -39,9 +30,7 @@ export const SettingsProviders: Component = () => {
   }
 
   const connected = createMemo(() => {
-    return providers
-      .connected()
-      .filter((p) => p.id !== "opencode" || Object.values(p.models).find((m) => m.cost?.input))
+    return providers.connected()
   })
 
   const popular = createMemo(() => {
@@ -187,10 +176,7 @@ export const SettingsProviders: Component = () => {
                     <div class="flex items-center gap-x-3">
                       <ProviderIcon id={icon(item.id)} class="size-5 shrink-0 icon-strong-base" />
                       <span class="text-14-medium text-text-strong">{item.name}</span>
-                      <Show when={item.id === "opencode"}>
-                        <Tag>{language.t("dialog.provider.tag.recommended")}</Tag>
-                      </Show>
-                    </div>
+                      </div>
                     <Show when={note(item.id)}>
                       {(key) => <span class="text-12-regular text-text-weak pl-8">{language.t(key())}</span>}
                     </Show>
@@ -234,15 +220,6 @@ export const SettingsProviders: Component = () => {
             </div>
           </div>
 
-          <Button
-            variant="ghost"
-            class="px-0 py-0 mt-5 text-14-medium text-text-interactive-base text-left justify-start hover:bg-transparent active:bg-transparent"
-            onClick={() => {
-              dialog.show(() => <DialogSelectProvider />)
-            }}
-          >
-            {language.t("dialog.provider.viewAll")}
-          </Button>
         </div>
       </div>
     </div>
